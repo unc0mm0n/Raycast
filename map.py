@@ -1,9 +1,9 @@
 from random import random
 
-START = 'S'
-FOOD = '.'
-BIG_FOOD = 'O'
-WALL = '+'
+START = 4
+FOOD = 3
+BIG_FOOD = 2
+WALL = 1
 EMPTY = 0
 
 
@@ -79,8 +79,18 @@ class Map:
 
         return neighbours
 
-    def __getitem__(self, idx):
-        return self.map[idx]
+    def get(self, key, default=None):
+        return self.map.get(key, default)
+
+    def __getitem__(self, key):
+        return self.map[key]
+
+    def pprint(self):
+        for y in range(self.rows):
+            for x in range(self.cols):
+                ch = self.get((x, y), ' ')
+                print(ch, end='')
+            print()
 
 if __name__ == '__main__':
 
