@@ -16,11 +16,14 @@ class Map:
     @classmethod
     def FromFile(cls, mapFileName):
         map = {}
+        start = (0, 0)
         with open(mapFileName, 'r') as mapFile:
-            start = tuple(int(i) for i in mapFile.readline().split(','))
-            for line, y in enumerate(mapFile):
-                for ch, x in line[:-1]:
-                    map[(x, y)] = ch
+            for y, line in enumerate(mapFile):
+                for x, ch in enumerate(line[:-1]):
+                    if int(ch) == START:
+                        ch = EMPTY
+                        start = (x, y)
+                    map[(x, y)] = int(ch)
 
         return cls(map, start)
 

@@ -5,12 +5,12 @@ from time import sleep
 
 from collections import defaultdict
 
-WALL_HEIGHT = 64
+WALL_HEIGHT = 300
 PLAYER_HEIGHT = 32
 FOV = math.pi / 2
 W = 600
 H = 600
-VIEW_RANGE = 6
+VIEW_RANGE = 20
 EMPTY = float('inf')
 CIRCLE = 2 * math.pi
 
@@ -46,7 +46,6 @@ class Player(object):
         Calculate the player's next position, and move if he will
         not end up inside a wall.
         """
-        print('walking')
         dx = distance * math.sin(self.direction)
         dy = distance * math.cos(self.direction)
         map_x = (math.floor(self.x + dx), math.floor(self.y))
@@ -59,7 +58,6 @@ class Player(object):
 
     def update(self, dt, game_map):
         """Execute movement functions if the appropriate key is pressed."""
-        print(dt)
         if self.keys[pg.K_RIGHT]:
             self.rotate(-self.rotate_speed * dt)
         if self.keys[pg.K_LEFT]:
@@ -67,7 +65,7 @@ class Player(object):
         if self.keys[pg.K_UP]:
             self.walk(self.speed * dt, game_map)
         if self.keys[pg.K_DOWN]:
-            self.walk(self.speed * dt, game_map)
+            self.walk(-self.speed * dt, game_map)
 
 
 class Raycast:
@@ -93,7 +91,7 @@ class Raycast:
             # Get the distance from the wall at given angle
             dist = self.cast_ray((player.x, player.y), angle, map, player.view)
             # Fix the bobeye effect based on the player's angle and append it.
-            walls.append(dist * math.cos(abs(player.direction - angle)))
+            walls.append((dist[0] * math.cos(abs(player.direction - angle)), dist[1]))
             # Advance the angle one tick.
             angle = (angle + step_size) % CIRCLE
 
@@ -185,8 +183,8 @@ class Raycast:
             # if no wall was found in range, return infinity
             return float('inf')
 
-        vertical = get_vertical(start, angle, map)
-        horizontal = get_horizontal(start, angle, map)
+        vertical = (get_vertical(start, angle, map), 0)
+        horizontal = (get_horizontal(start, angle, map), 1)
         # Return the minimum distance
         #input()
         return min(vertical, horizontal)
@@ -194,28 +192,33 @@ class Raycast:
 
 def pygame_draw(screen, dists):
     screen.fill((0, 0, 0))
-    width = 10
+    floor = pg.Rect(0, H/2, W, H/2)
+    pg.draw.rect(screen, (100, 100, 100), floor)
+    width = 1
+    side_alpha = 50
+    color = (220, 210, 255)
 
     for idx, dist in enumerate(dists):
-        if dist == float('inf'):
+        if dist[0] == float('inf'):
             continue
-        z = max(dist, WALL_HEIGHT / H)
+        z = max(dist[0], WALL_HEIGHT / H)
         wall_height = WALL_HEIGHT / (z)
         top = H / 2 - wall_height / 2
         scale_rect = pg.Rect(W - idx, top, width, wall_height)
-        pg.draw.rect(screen, (200, 200, 255), scale_rect)
+        next_color = tuple(i - side_alpha * dist[1] for i in color)
+        pg.draw.rect(screen, next_color , scale_rect)
     pg.display.flip()
 
 
 def main():
     pg.init()
     screen = pg.display.set_mode((W, H))
-    map = Map.Random(20, 20, 0.20, (2.5, 0.5))
+    map = Map.Random(20, 20, 0.3, (1, 1))
     p = Player(*map.start, direction=0)
     world = Raycast(W, H)
     map.pprint()
     clock = pg.time.Clock()
-    p.direction = math.pi / 2
+    p.direction = math.pi
 
     while True:
         dt = clock.tick() / 1000
@@ -223,10 +226,8 @@ def main():
             if event.type == pg.QUIT:
                 pg.quit()
             elif event.type == pg.KEYDOWN:
-                print(event)
                 p.keys[event.key] = True
             elif event.type == pg.KEYUP:
-                print(event, 'up')
                 p.keys[event.key] = False
         heights = world.cast_rays(p, map)
         p.update(dt, map)
