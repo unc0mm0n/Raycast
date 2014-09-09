@@ -1,2 +1,4 @@
 resources
 raycast.py
+*.txt
+__pycache__
