@@ -2,6 +2,7 @@ from map import Map
 import math
 import pygame as pg
 from time import sleep
+from datetime import datetime
 
 from collections import defaultdict
 
@@ -34,8 +35,8 @@ class Player(object):
         self.direction = direction
         self.fov = FOV
         self.view = VIEW_RANGE
-        self.speed = 3  # Map cells per second.
-        self.rotate_speed = CIRCLE/2  # 180 degrees in a second.
+        self.speed = 4  # Map cells per second.
+        self.rotate_speed = CIRCLE * 2 / 3  # 180 degrees in a second.
 
     def rotate(self, angle):
         """Change the player's direction when appropriate key is pressed."""
@@ -195,17 +196,22 @@ def pygame_draw(screen, dists):
     floor = pg.Rect(0, H/2, W, H/2)
     pg.draw.rect(screen, (100, 100, 100), floor)
     width = 1
-    side_alpha = 50
+    base_alpha = 50
+    
     color = (220, 210, 255)
 
     for idx, dist in enumerate(dists):
+
         if dist[0] == float('inf'):
             continue
+        
         z = max(dist[0], WALL_HEIGHT / H)
         wall_height = WALL_HEIGHT / (z)
+
+        wall_alpha = min(250, base_alpha * (dist[1] + dist[0]/2 ))
         top = H / 2 - wall_height / 2
         scale_rect = pg.Rect(W - idx, top, width, wall_height)
-        next_color = tuple(i - side_alpha * dist[1] for i in color)
+        next_color = tuple(max(0, i - wall_alpha) for i in color)
         pg.draw.rect(screen, next_color , scale_rect)
     pg.display.flip()
 
@@ -220,7 +226,8 @@ def main():
     clock = pg.time.Clock()
     p.direction = math.pi
 
-    while True:
+    a = datetime.now()
+    for _ in range(600):
         dt = clock.tick() / 1000
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -233,8 +240,7 @@ def main():
         p.update(dt, map)
         pygame_draw(screen, heights)
         #sleep(10)
-
-    input()
+    print (datetime.now() - a)
 
 if __name__ == '__main__':
     main()
